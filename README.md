@@ -2,6 +2,8 @@
 
 一个基于 **Chrome Manifest V3** 的浏览器插件，通过导入 Cookies 快速登录哔哩哔哩网页端（`bilibili.com`）。
 
+![License](https://img.shields.io/badge/license-MIT-green) ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Edge-blue) ![Manifest](https://img.shields.io/badge/manifest-v3-orange)
+
 ## 功能
 
 - **自动获取已登录 Cookie**：从当前浏览器已登录的 B 站账号中一键读取全部 Cookie，可「获取并写入」「获取并填入表单」或「复制」。
@@ -59,16 +61,16 @@
 | `DedeUserID` | 建议填写 | 用户 UID |
 | `DedeUserID__ckMd5` | 可选 | 用户校验值 |
 
-## 图标生成（可选）
+## 图标
 
-插件默认使用浏览器默认图标。如需自定义图标，运行：
+插件已内置生成的 PNG 图标（`icons/icon16.png`、`icon48.png`、`icon128.png`），并在 `manifest.json` 中引用，加载扩展即可显示。
+
+如需自定义图标，修改 `generate_icons.py` 后运行：
 
 ```bash
 pip install Pillow
 python generate_icons.py
 ```
-
-生成 `icons/icon16.png`、`icon48.png`、`icon128.png` 后，在 `manifest.json` 中取消 `action.default_icon` 和 `icons` 字段的注释。
 
 ## 目录结构
 
@@ -80,8 +82,12 @@ bilibili-cookie-login/
 ├── styles.css           # 界面样式
 ├── background.js        # 后台 Service Worker（Cookie 写入/清除/状态）
 ├── generate_icons.py    # 图标生成脚本（可选）
+├── LICENSE              # MIT 许可证
 └── icons/
-    └── icon.svg         # SVG 图标源文件
+    ├── icon.svg         # SVG 图标源文件
+    ├── icon16.png       # 工具栏图标
+    ├── icon48.png       # 扩展管理页图标
+    └── icon128.png      # 安装对话框图标
 ```
 
 ## 注意事项
@@ -89,3 +95,7 @@ bilibili-cookie-login/
 - 插件只支持 **Chromium 内核**浏览器（Chrome、Edge、Brave、Opera 等）。
 - Cookie 会过期，过期后需重新导入；导入的 txt 中若缺少 `SESSDATA`，插件会提示可能无法登录。
 - 导出的 txt 文件等同于账号凭证，请妥善保管，不要分享给他人。
+
+## 许可证
+
+[MIT](LICENSE) © 2026 yumoii789
