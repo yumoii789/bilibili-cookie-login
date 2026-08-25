@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>哔哩哔哩 Cookies 登录助手</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">B</span>
+        <h1>哔哩哔哩 Cookies 登录助手</h1>
+      </div>
+      <p class="subtitle">通过导入 Cookies 快速登录网页端</p>
+    </header>
+
+    <!-- 登录状态显示 -->
+    <div id="login-status" class="status-card hidden">
+      <div class="status-row">
+        <span class="status-label">当前账号：</span>
+        <span id="status-username" class="status-value">-</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">登录状态：</span>
+        <span id="status-login" class="status-value">-</span>
+      </div>
+      <button id="btn-check" class="btn btn-secondary btn-sm">刷新状态</button>
+    </div>
+
+    <!-- 自动获取 -->
+    <section class="section">
+      <h2>自动获取已登录 Cookie</h2>
+      <p class="hint">从当前浏览器已登录的哔哩哔哩账号中自动读取 Cookie（无需手动复制）。</p>
+      <div class="btn-row">
+        <button id="btn-fetch" class="btn btn-primary">获取并写入</button>
+        <button id="btn-fetch-fill" class="btn btn-secondary">获取并填入表单</button>
+        <button id="btn-copy" class="btn btn-ghost">复制 Cookie</button>
+      </div>
+    </section>
+
+    <!-- 输入 Cookies -->
+    <section class="section">
+      <h2>方式一：粘贴完整 Cookie 字符串</h2>
+      <p class="hint">从浏览器开发者工具（F12 → 网络 → 请求头）复制完整 Cookie，粘贴到下方。</p>
+      <textarea id="cookie-input" rows="5" placeholder="SESSDATA=xxx; bili_jct=xxx; DedeUserID=xxx; ..."></textarea>
+      <div class="btn-row">
+        <button id="btn-parse" class="btn btn-primary">解析并写入 Cookie</button>
+        <button id="btn-clear" class="btn btn-ghost">清空</button>
+      </div>
+    </section>
+
+    <!-- 手动填写关键字段 -->
+    <section class="section">
+      <h2>方式二：手动填写关键字段</h2>
+      <div class="field">
+        <label for="field-sessdata">SESSDATA</label>
+        <input type="text" id="field-sessdata" placeholder="必填，登录凭证核心字段">
+      </div>
+      <div class="field">
+        <label for="field-bili-jct">bili_jct</label>
+        <input type="text" id="field-bili-jct" placeholder="CSRF Token，投稿/评论等操作需要">
+      </div>
+      <div class="field">
+        <label for="field-dede-userid">DedeUserID</label>
+        <input type="text" id="field-dede-userid" placeholder="用户 UID">
+      </div>
+      <div class="field">
+        <label for="field-dede-username">DedeUserID__ckMd5</label>
+        <input type="text" id="field-dede-ckmd5" placeholder="可选，用户校验值">
+      </div>
+      <button id="btn-manual" class="btn btn-primary">写入关键字段</button>
+    </section>
+
+    <!-- 多账号管理 -->
+    <section class="section">
+      <h2>多账号管理</h2>
+      <p class="hint">保存多个 B 站账号的 Cookie，随时一键切换登录。</p>
+
+      <div class="account-save-row">
+        <input type="text" id="account-name" placeholder="账号备注（如：小号）">
+        <button id="btn-save-account" class="btn btn-primary btn-sm">保存当前账号</button>
+      </div>
+
+      <div id="account-list" class="account-list">
+        <p class="account-empty">暂无已保存的账号。</p>
+      </div>
+    </section>
+
+    <!-- 快捷操作 -->
+    <section class="section">
+      <h2>快捷操作</h2>
+      <div class="btn-row">
+        <button id="btn-import" class="btn btn-secondary">从 txt 导入 Cookie</button>
+        <button id="btn-export" class="btn btn-secondary">导出 Cookie 到 txt</button>
+        <button id="btn-open" class="btn btn-secondary">打开哔哩哔哩</button>
+        <button id="btn-logout" class="btn btn-danger">清除 B 站 Cookie（退出登录）</button>
+      </div>
+      <input type="file" id="txt-import" accept=".txt,text/plain" class="hidden">
+    </section>
+
+    <div id="message" class="message hidden"></div>
+
+    <footer class="footer">
+      <p>提示：Cookie 仅保存在本地浏览器，不会上传到任何服务器。</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

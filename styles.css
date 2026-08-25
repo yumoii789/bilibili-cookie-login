@@ -1,0 +1,368 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  background: #f5f5f7;
+  color: #1f2329;
+  width: 380px;
+}
+
+.container {
+  padding: 16px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #fb7299, #ff6b81);
+  color: #fff;
+  font-size: 22px;
+  font-weight: bold;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(251, 114, 153, 0.4);
+}
+
+h1 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.subtitle {
+  color: #8a8f99;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+/* Status card */
+.status-card {
+  background: #fff;
+  border: 1px solid #e5e6eb;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.status-label {
+  color: #8a8f99;
+}
+
+.status-value {
+  font-weight: 500;
+}
+
+.status-value.online {
+  color: #00b96b;
+}
+
+.status-value.offline {
+  color: #f5222d;
+}
+
+/* Sections */
+.section {
+  background: #fff;
+  border: 1px solid #e5e6eb;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.section h2 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #2b2f36;
+}
+
+.hint {
+  font-size: 12px;
+  color: #8a8f99;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+/* Textarea & inputs */
+textarea,
+input[type="text"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #d0d3d9;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: "Consolas", "Courier New", monospace;
+  background: #fafafa;
+  transition: border-color 0.2s;
+  resize: vertical;
+}
+
+textarea:focus,
+input[type="text"]:focus {
+  outline: none;
+  border-color: #fb7299;
+  background: #fff;
+}
+
+textarea {
+  min-height: 90px;
+  margin-bottom: 10px;
+}
+
+.field {
+  margin-bottom: 10px;
+}
+
+.field label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+/* Buttons */
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  flex: 1;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #fb7299, #ff6b81);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(251, 114, 153, 0.3);
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: #f0f1f3;
+  color: #2b2f36;
+}
+
+.btn-secondary:hover {
+  background: #e5e6eb;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #8a8f99;
+  border: 1px solid #d0d3d9;
+  flex: 0 0 auto;
+  padding: 9px 14px;
+}
+
+.btn-ghost:hover {
+  background: #f0f1f3;
+}
+
+.btn-danger {
+  background: #fff1f0;
+  color: #f5222d;
+  border: 1px solid #ffa39e;
+}
+
+.btn-danger:hover {
+  background: #ffccc7;
+}
+
+.btn-sm {
+  flex: none;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* Message */
+.message {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.message.success {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  color: #389e0d;
+}
+
+.message.error {
+  background: #fff2f0;
+  border: 1px solid #ffa39e;
+  color: #cf1322;
+}
+
+.message.info {
+  background: #e6f4ff;
+  border: 1px solid #91caff;
+  color: #0958d9;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  font-size: 11px;
+  color: #a0a4ab;
+  margin-top: 8px;
+}
+
+/* 多账号管理 */
+.account-save-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.account-save-row input[type="text"] {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #d0d3d9;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #fafafa;
+}
+
+.account-save-row input[type="text"]:focus {
+  outline: none;
+  border-color: #fb7299;
+  background: #fff;
+}
+
+.account-list {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.account-empty {
+  padding: 12px;
+  text-align: center;
+  color: #a0a4ab;
+  font-size: 12px;
+}
+
+.account-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #eef0f2;
+  font-size: 13px;
+}
+
+.account-item:last-child {
+  border-bottom: none;
+}
+
+.account-item .account-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-item .account-name {
+  font-weight: 500;
+  color: #2b2f36;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-item .account-uid {
+  font-size: 11px;
+  color: #8a8f99;
+}
+
+.account-item .account-badge {
+  flex: none;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fb7299;
+  color: #fff;
+}
+
+.account-item .account-actions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+.account-item .mini-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.account-item .mini-btn.switch {
+  background: #fb7299;
+  color: #fff;
+}
+
+.account-item .mini-btn.switch:hover {
+  opacity: 0.85;
+}
+
+.account-item .mini-btn.del {
+  background: #fff1f0;
+  color: #f5222d;
+  border: 1px solid #ffa39e;
+}
+
+.account-item .mini-btn.del:hover {
+  background: #ffccc7;
+}
