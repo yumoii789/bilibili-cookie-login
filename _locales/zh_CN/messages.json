@@ -1,0 +1,110 @@
+{
+  "name": {
+    "message": "哔哩哔哩 Cookies 登录助手",
+    "description": "扩展名称"
+  },
+  "description": {
+    "message": "通过导入 Cookies 快速登录哔哩哔哩网页端，支持一键写入 Cookie 并自动刷新登录。",
+    "description": "扩展描述"
+  },
+  "popup_title": {
+    "message": "哔哩哔哩 Cookies 登录助手",
+    "description": "弹出窗口标题"
+  },
+  "btn_fetch": {
+    "message": "获取并写入",
+    "description": "自动获取已登录 Cookie 并写入"
+  },
+  "btn_fetch_fill": {
+    "message": "获取并填入表单",
+    "description": "获取已登录 Cookie 并填入手动字段"
+  },
+  "btn_copy": {
+    "message": "复制 Cookie",
+    "description": "复制已登录 Cookie 到剪贴板"
+  },
+  "btn_import": {
+    "message": "从 txt 导入 Cookie",
+    "description": "从 txt 文件导入 Cookie"
+  },
+  "btn_export": {
+    "message": "导出 Cookie 到 txt",
+    "description": "导出当前 Cookie 到 txt 文件"
+  },
+  "btn_save_account": {
+    "message": "保存当前账号",
+    "description": "保存当前 Bilibili 登录状态到多账号管理"
+  },
+  "btn_open": {
+    "message": "打开哔哩哔哩",
+    "description": "打开哔哩哔哩网页"
+  },
+  "btn_logout": {
+    "message": "清除 B 站 Cookie",
+    "description": "清除当前 Bilibili 所有 Cookie"
+  },
+  "btn_check": {
+    "message": "刷新状态",
+    "description": "刷新当前登录状态"
+  },
+  "btn_manual": {
+    "message": "写入关键字段",
+    "description": "使用手动字段写入关键 Cookie"
+  },
+  "btn_parse": {
+    "message": "解析并写入 Cookie",
+    "description": "解析粘贴的完整 Cookie 字符串并写入"
+  },
+  "btn_clear": {
+    "message": "清空",
+    "description": "清空 Cookie 输入框"
+  },
+  "login_status": {
+    "message": "当前账号：",
+    "description": "登录状态显示前缀"
+  },
+  "has_sessdata": {
+    "message": "已配置 SESSDATA",
+    "description": "部分登录状态"
+  },
+  "logged_in": {
+    "message": "已登录",
+    "description": "完全登录状态"
+  },
+  "not_logged_in": {
+    "message": "未登录",
+    "description": "未登录状态"
+  },
+  "cookie_input_placeholder": {
+    "message": "SESSDATA=xxx; bili_jct=xxx; DedeUserID=xxx; ...",
+    "description": "Cookie 输入框占位符"
+  },
+  "field_sessdata_label": {
+    "message": "SESSDATA",
+    "description": "SESSDATA 字段标签"
+  },
+  "field_bili_jct_label": {
+    "message": "bili_jct",
+    "description": "bili_jct 字段标签"
+  },
+  "field_dede_userid_label": {
+    "message": "DedeUserID",
+    "description": "DedeUserID 字段标签"
+  },
+  "field_dede_ckmd5_label": {
+    "message": "DedeUserID__ckMd5",
+    "description": "DedeUserID__ckMd5 字段标签"
+  },
+  "message_success": {
+    "message": "成功：",
+    "description": "成功消息前缀"
+  },
+  "message_error": {
+    "message": "错误：",
+    "description": "错误消息前缀"
+  },
+  "message_info": {
+    "message": "提示：",
+    "description": "提示消息前缀"
+  }
+}

@@ -4,70 +4,20 @@
 const BILIBILI_DOMAIN = ".bilibili.com";
 const BILIBILI_URL = "https://www.bilibili.com/";
 
+// 需要写入的关键 Cookie 字段
+const KEY_COOKIES = ["SESSDATA", "bili_jct", "DedeUserID", "DedeUserID__ckMd5"];
+
 // 多账号存储 key
-const ACCOUNTS_STORAGE_KEY = "bili_accounts";
+const ACCOUNTS_STORAGE_KEY = "bili_accounts"; // 多账号存储 key
 
-// 监听来自 popup 的消息
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  switch (message.action) {
-    case "writeCookies":
-      writeCookies(message.cookies)
-        .then(() => sendResponse({ ok: true }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      break;
-
-    case "clearCookies":
-      clearCookies()
-        .then(() => sendResponse({ ok: true }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      break;
-
-    case "getStatus":
-      getStatus()
-        .then((status) => sendResponse({ ok: true, status }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      break;
-
-    case "getCookies":
-      getCookies()
-        .then((cookies) => sendResponse({ ok: true, cookies }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      break;
-
-    case "saveAccount":
-      saveAccount(message.name, message.cookies)
-        .then((account) => sendResponse({ ok: true, account }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      break;
-
-    case "listAccounts":
-      listAccounts()
-        .then((accounts) => sendResponse({ ok: true, accounts }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      break;
-
-    case "deleteAccount":
-      deleteAccount(message.id)
-        .then(() => sendResponse({ ok: true }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      break;
-
-    case "switchAccount":
-      switchAccount(message.id)
-        .then(() => sendResponse({ ok: true }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
-      break;
-
-    case "openBilibili":
-      chrome.tabs.create({ url: BILIBILI_URL }, () => sendResponse({ ok: true }));
-      break;
-
-    default:
-      sendResponse({ ok: false, error: "未知操作" });
-  }
-  // 保持消息通道开放，支持异步 sendResponse
-  return true;
-});
+/**
+ * 将 Cookie 数组格式化为浏览器请求头中的 Cookie 字符串
+ * @param {Array<{name: string, value: string}>} cookies
+ * @returns {string}
+ */
+function cookiesToString(cookies) {
+  return cookies.map((c) => `${c.name}=${c.value}`).join("; ");
+}
 
 /**
  * 写入一组 Cookie 到 bilibili.com 域
@@ -225,3 +175,65 @@ async function switchAccount(id) {
   await clearCookies();
   await writeCookies(account.cookies);
 }
+
+// 监听来自 popup 的消息
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  switch (message.action) {
+    case "writeCookies":
+      writeCookies(message.cookies)
+        .then(() => sendResponse({ ok: true }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      break;
+
+    case "clearCookies":
+      clearCookies()
+        .then(() => sendResponse({ ok: true }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      break;
+
+    case "getStatus":
+      getStatus()
+        .then((status) => sendResponse({ ok: true, status }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      break;
+
+    case "getCookies":
+      getCookies()
+        .then((cookies) => sendResponse({ ok: true, cookies }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      break;
+
+    case "saveAccount":
+      saveAccount(message.name, message.cookies)
+        .then((account) => sendResponse({ ok: true, account }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      break;
+
+    case "listAccounts":
+      listAccounts()
+        .then((accounts) => sendResponse({ ok: true, accounts }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      break;
+
+    case "deleteAccount":
+      deleteAccount(message.id)
+        .then(() => sendResponse({ ok: true }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      break;
+
+    case "switchAccount":
+      switchAccount(message.id)
+        .then(() => sendResponse({ ok: true }))
+        .catch((err) => sendResponse({ ok: false, error: err.message }));
+      break;
+
+    case "openBilibili":
+      chrome.tabs.create({ url: BILIBILI_URL }, () => sendResponse({ ok: true }));
+      break;
+
+    default:
+      sendResponse({ ok: false, error: "未知操作" });
+  }
+  // 保持消息通道开放，支持异步 sendResponse
+  return true;
+});

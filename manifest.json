@@ -3,14 +3,15 @@
   "name": "哔哩哔哩 Cookies 登录助手",
   "version": "1.0.0",
   "description": "通过导入 Cookies 快速登录哔哩哔哩网页端，支持一键写入 Cookie 并自动刷新登录。",
+  "default_locale": "zh_CN",
   "permissions": [
     "cookies",
     "storage",
-    "tabs"
+    "tabs",
+    "scripting"
   ],
   "host_permissions": [
-    "https://*.bilibili.com/*",
-    "http://*.bilibili.com/*"
+    "https://*.bilibili.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -27,6 +28,10 @@
     "128": "icons/icon128.png"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
