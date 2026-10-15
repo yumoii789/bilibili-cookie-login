@@ -39,11 +39,12 @@ function showMessage(text, type = "info") {
   messageEl.textContent = text;
   messageEl.className = `message ${type}`;
   messageEl.classList.remove("hidden");
-  // 自动隐藏
+  // 自动隐藏；错误提示（如"凭证已过期"）需要用户处理，给更长的阅读时间
   clearTimeout(showMessage._timer);
+  const delay = type === "error" ? 15000 : 6000;
   showMessage._timer = setTimeout(() => {
     messageEl.classList.add("hidden");
-  }, 6000);
+  }, delay);
 }
 
 /**
@@ -108,12 +109,47 @@ function sendToBackground(message) {
         return;
       }
       if (!response || !response.ok) {
-        reject(new Error((response && response.error) || "操作失败"));
+        const error = new Error((response && response.error) || "操作失败");
+        // 后台会附带每个 Cookie 的失败原因，一并带给调用方展示
+        error.summary = response && response.summary;
+        reject(error);
         return;
       }
       resolve(response);
     });
   });
+}
+
+/**
+ * 把秒级时间戳格式化为本地时间
+ * @param {number|null} seconds
+ * @returns {string}
+ */
+function formatDate(seconds) {
+  if (typeof seconds !== "number" || !isFinite(seconds)) return "-";
+  const d = new Date(seconds * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/**
+ * 把后台返回的写入统计整理成给用户看的补充说明
+ * @param {{failed?:Array<{name:string,reason:string}>, refreshedExpiry?:string[]}} summary
+ * @returns {string}
+ */
+function describeSummary(summary) {
+  if (!summary) return "";
+  const parts = [];
+  if (summary.failed && summary.failed.length > 0) {
+    parts.push(
+      `失败 ${summary.failed.length} 个：` +
+        summary.failed.map((f) => `${f.name}（${f.reason}）`).join("、")
+    );
+  }
+  if (summary.refreshedExpiry && summary.refreshedExpiry.length > 0) {
+    parts.push(`其中 ${summary.refreshedExpiry.length} 个 Cookie 的有效期已过，已按 30 天重新计算后写入`);
+  }
+  return parts.join("；");
 }
 
 /**
@@ -138,15 +174,25 @@ async function applyCookies(cookies) {
 
   showMessage(`正在写入 ${deduped.length} 个 Cookie...`, "info");
   try {
-    await sendToBackground({ action: "writeCookies", cookies: deduped });
-    if (hasSessdata) {
-      showMessage(`Cookie 写入成功（共 ${deduped.length} 个）！请刷新或打开哔哩哔哩页面。`, "success");
+    const res = await sendToBackground({ action: "writeCookies", cookies: deduped });
+    const summary = res.summary || {};
+    const extra = describeSummary(summary);
+    if (summary.written === 0 && summary.failed && summary.failed.length > 0) {
+      showMessage(`写入失败：所有 Cookie 都未能写入。${extra}`, "error");
+    } else if (hasSessdata) {
+      showMessage(
+        `Cookie 写入成功（共 ${summary.written || deduped.length} 个）！请刷新或打开哔哩哔哩页面。` +
+          (extra ? ` 注意：${extra}` : ""),
+        extra ? "info" : "success"
+      );
     } else {
       showMessage("已写入，但未包含 SESSDATA 字段，可能无法完成登录。", "info");
     }
     await refreshStatus();
+    await renderAccountList();
   } catch (e) {
-    showMessage(`写入失败：${e.message}`, "error");
+    const extra = describeSummary(e.summary);
+    showMessage(`写入失败：${e.message}${extra ? `（${extra}）` : ""}`, "error");
   }
 }
 
@@ -158,7 +204,7 @@ async function refreshStatus() {
     const res = await sendToBackground({ action: "getStatus" });
     const s = res.status;
     statusCard.classList.remove("hidden");
-    statusUsername.textContent = s.hasUserId ? `UID: ${s.hasUserId}` : "-";
+    statusUsername.textContent = s.hasUserId ? `UID: ${s.uid}` : "-";
     if (s.loggedIn) {
       statusLogin.textContent = "已登录";
       statusLogin.className = "status-value online";
@@ -329,6 +375,20 @@ async function renderAccountList() {
       info.appendChild(nameEl);
       info.appendChild(uidEl);
 
+      // 有效期提示：Cookie 过期后再切换必然写不进去，提前让用户看到
+      const expiryEl = document.createElement("div");
+      expiryEl.className = "account-expiry" + (acc.expired ? " expired" : "");
+      if (acc.sessionOnly) {
+        expiryEl.textContent = "会话 Cookie（无固定有效期）";
+      } else if (acc.expired) {
+        expiryEl.textContent = `已过期（${formatDate(acc.expiresAt)}）`;
+      } else if (acc.expiresAt) {
+        expiryEl.textContent = `有效期至 ${formatDate(acc.expiresAt)}`;
+      } else {
+        expiryEl.textContent = "";
+      }
+      if (expiryEl.textContent) info.appendChild(expiryEl);
+
       const actions = document.createElement("div");
       actions.className = "account-actions";
 
@@ -366,9 +426,24 @@ async function saveCurrentAccount() {
       return;
     }
     const name = accountNameInput.value.trim();
-    await sendToBackground({ action: "saveAccount", name, cookies });
+    const saved = await sendToBackground({ action: "saveAccount", name, cookies });
     accountNameInput.value = "";
-    showMessage("账号已保存。", "success");
+    const acc = saved.account || {};
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (acc.expired) {
+      showMessage(
+        `账号已保存，但它的登录凭证在 ${formatDate(acc.expiresAt)} 就已过期。请先在 B 站重新登录，再重新保存该账号。`,
+        "error"
+      );
+    } else if (acc.expiresAt && acc.expiresAt - nowSec < 3 * 24 * 3600) {
+      // 保存时浏览器里的 Cookie 一定是有效的，但可能很快就过期，提前提醒
+      showMessage(
+        `账号已保存，但凭证将在 ${formatDate(acc.expiresAt)} 过期（不足 3 天），到期后需重新登录并重新保存。`,
+        "info"
+      );
+    } else {
+      showMessage("账号已保存。", "success");
+    }
     await renderAccountList();
   } catch (e) {
     showMessage(`保存失败：${e.message}`, "error");
@@ -383,11 +458,26 @@ async function switchToAccount(id) {
   if (!confirm("切换账号将清除当前 B 站 Cookie 并写入所选账号，确定继续？")) return;
   try {
     showMessage("正在切换账号...", "info");
-    await sendToBackground({ action: "switchAccount", id });
-    showMessage("账号切换成功！请刷新或打开哔哩哔哩页面。", "success");
+    const res = await sendToBackground({ action: "switchAccount", id });
+    const extra = describeSummary(res.summary);
+    if (res.expiry && res.expiry.expired) {
+      // 过期凭证无法真正恢复登录：已经按原值写入，但必须明确告诉用户原因
+      showMessage(
+        `已写入该账号的 Cookie，但它的登录凭证在 ${formatDate(res.expiry.expiresAt)} 就已过期，` +
+          `B 站很可能仍显示未登录——请在 B 站重新登录后重新保存该账号。${extra ? ` ${extra}` : ""}`,
+        "error"
+      );
+    } else {
+      showMessage(
+        "账号切换成功！请刷新或打开哔哩哔哩页面。" + (extra ? ` 注意：${extra}` : ""),
+        extra ? "info" : "success"
+      );
+    }
     await refreshStatus();
+    await renderAccountList();
   } catch (e) {
-    showMessage(`切换失败：${e.message}`, "error");
+    const extra = describeSummary(e.summary);
+    showMessage(`切换失败：${e.message}${extra ? `（${extra}）` : ""}`, "error");
   }
 }
 

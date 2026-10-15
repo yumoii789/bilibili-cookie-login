@@ -10,6 +10,80 @@ const KEY_COOKIES = ["SESSDATA", "bili_jct", "DedeUserID", "DedeUserID__ckMd5"];
 // 多账号存储 key
 const ACCOUNTS_STORAGE_KEY = "bili_accounts"; // 多账号存储 key
 
+// 过期 Cookie 的兜底有效期。
+// Chrome 对 expirationDate 已经过去的 Cookie 不会报错，而是直接丢弃并让
+// cookies.set() 返回 null——看起来就像"写入被拒绝"。所以绝不原样转发过期的有效期。
+const DEFAULT_TTL_SECONDS = 30 * 24 * 3600; // 30 天
+const EXPIRY_SLACK_SECONDS = 60; // 距过期不足 60 秒也当作已过期
+
+/**
+ * 判断一个有效期是否已经过去（或即将过去）
+ * @param {number|undefined} expirationDate 秒级时间戳
+ * @param {number} now 秒级当前时间
+ * @returns {boolean}
+ */
+function isStaleExpiry(expirationDate, now) {
+  if (typeof expirationDate !== "number" || !Number.isFinite(expirationDate)) return true;
+  return expirationDate <= now + EXPIRY_SLACK_SECONDS;
+}
+
+/**
+ * 把一条 Cookie 还原成 chrome.cookies.set() 需要的参数
+ *
+ * 关键点：
+ * 1. 保留 Cookie 自己的 domain / path，host-only Cookie（如 www.bilibili.com）
+ *    不会被强行改写成 .bilibili.com；
+ * 2. 有效期已过去时刷新为默认有效期，否则原样保留；
+ * 3. 统一写入 Secure：bilibili 全站 HTTPS，而实测非 Secure 的 Cookie 在部分
+ *    Chromium 版本/拦截策略下会被静默丢弃（set() 返回对象但存储里查不到）；
+ * 4. SameSite 按原值保留，只有原本就是 None(no_restriction) 时才用 None，
+ *    不把 Lax/未指定的 Cookie 一律改成 SameSite=None。
+ * @param {{name:string,value:string,domain?:string,path?:string,secure?:boolean,httpOnly?:boolean,sameSite?:string,expirationDate?:number}} cookie
+ * @param {number} now 秒级当前时间
+ */
+function buildCookieDetails(cookie, now) {
+  const domain = cookie.domain || BILIBILI_DOMAIN;
+  const path = cookie.path && cookie.path.startsWith("/") ? cookie.path : "/";
+  // 始终使用 https：manifest 的 host_permissions 只覆盖 https://*.bilibili.com/*
+  const host = domain.replace(/^\./, "");
+  const sameSite =
+    cookie.sameSite === "no_restriction" || cookie.sameSite === "strict" || cookie.sameSite === "lax"
+      ? cookie.sameSite
+      : undefined;
+
+  const details = {
+    url: `https://${host}${path}`,
+    name: cookie.name,
+    value: String(cookie.value === undefined ? "" : cookie.value),
+    domain,
+    path,
+    secure: true,
+    expirationDate: isStaleExpiry(cookie.expirationDate, now)
+      ? now + DEFAULT_TTL_SECONDS
+      : cookie.expirationDate,
+  };
+  if (sameSite) details.sameSite = sameSite;
+  if (typeof cookie.httpOnly === "boolean") details.httpOnly = cookie.httpOnly;
+  return details;
+}
+
+/**
+ * 统计一组 Cookie 的有效期情况，用于提示账号是否已经过期
+ * @param {Array<{name:string,expirationDate?:number}>} cookies
+ * @returns {{expired:boolean, expiresAt:number|null, sessionOnly:boolean}}
+ */
+function accountExpiryInfo(cookies) {
+  const now = Math.floor(Date.now() / 1000);
+  const essential = cookies.filter((c) => KEY_COOKIES.includes(c.name));
+  const pool = essential.length > 0 ? essential : cookies;
+  const withExpiry = pool.filter((c) => typeof c.expirationDate === "number" && Number.isFinite(c.expirationDate));
+  if (withExpiry.length === 0) {
+    return { expired: false, expiresAt: null, sessionOnly: true };
+  }
+  const expiresAt = Math.min(...withExpiry.map((c) => c.expirationDate));
+  return { expired: isStaleExpiry(expiresAt, now), expiresAt, sessionOnly: false };
+}
+
 /**
  * 将 Cookie 数组格式化为浏览器请求头中的 Cookie 字符串
  * @param {Array<{name: string, value: string}>} cookies
@@ -21,45 +95,64 @@ function cookiesToString(cookies) {
 
 /**
  * 写入一组 Cookie 到 bilibili.com 域
- * @param {Array<{name: string, value: string}>} cookies
+ *
+ * 只有"关键登录 Cookie"（KEY_COOKIES）写入失败才会抛错；其余 Cookie 失败会
+ * 放进返回值的 failed 里由界面提示，避免一个无关字段让整次切换判定为失败。
+ * 返回值同时带上 refreshedExpiry，便于界面提醒用户账号已过期。
+ *
+ * @param {Array<{name:string,value:string}>} cookies
+ * @returns {Promise<{total:number, written:number, failed:Array<{name:string,reason:string}>, refreshedExpiry:string[], essentialFailed:string[]}>}
  */
 async function writeCookies(cookies) {
   if (!Array.isArray(cookies) || cookies.length === 0) {
     throw new Error("没有可写入的 Cookie 数据");
   }
 
-  const results = [];
-  for (const cookie of cookies) {
-    if (!cookie.name || cookie.value === undefined) continue;
+  const now = Math.floor(Date.now() / 1000);
+  const written = [];
+  const failed = [];
+  const refreshedExpiry = [];
 
-    const details = {
-      url: BILIBILI_URL,
-      name: cookie.name,
-      value: cookie.value,
-      domain: BILIBILI_DOMAIN,
-      path: "/",
-      secure: true,
-      sameSite: "no_restriction",
-      expirationDate: cookie.expirationDate || Math.floor(Date.now() / 1000) + 30 * 24 * 3600, // 默认 30 天
-    };
+  for (const cookie of cookies) {
+    if (!cookie || !cookie.name || cookie.value === undefined) continue;
+
+    const details = buildCookieDetails(cookie, now);
+    if (details.expirationDate !== cookie.expirationDate) refreshedExpiry.push(cookie.name);
 
     try {
       // 注意：set() 失败时可能返回 null 而不是抛异常，需同时检查两者
-      const written = await chrome.cookies.set(details);
-      if (written) {
-        results.push({ name: cookie.name, ok: true });
+      const result = await chrome.cookies.set(details);
+      if (result) {
+        written.push(cookie.name);
       } else {
-        results.push({ name: cookie.name, ok: false, error: "写入被拒绝" });
+        failed.push({ name: cookie.name, reason: "浏览器拒绝写入（有效期已过或字段不合法）" });
       }
     } catch (e) {
-      results.push({ name: cookie.name, ok: false, error: e.message });
+      failed.push({ name: cookie.name, reason: e && e.message ? e.message : String(e) });
     }
   }
 
-  const failed = results.filter((r) => !r.ok);
-  if (failed.length > 0) {
-    throw new Error(`部分 Cookie 写入失败: ${failed.map((f) => f.name).join(", ")}`);
+  const essentialFailed = failed.filter((f) => KEY_COOKIES.includes(f.name));
+  const summary = {
+    total: cookies.length,
+    written: written.length,
+    failed,
+    refreshedExpiry,
+    essentialFailed: essentialFailed.map((f) => f.name),
+  };
+
+  if (written.length === 0 && failed.length === 0) {
+    throw new Error("没有可写入的 Cookie 数据");
   }
+
+  if (essentialFailed.length > 0) {
+    const detail = essentialFailed.map((f) => `${f.name}（${f.reason}）`).join("；");
+    const err = new Error(`关键登录 Cookie 写入失败：${detail}`);
+    err.summary = summary;
+    throw err;
+  }
+
+  return summary;
 }
 
 /**
@@ -86,13 +179,17 @@ async function getStatus() {
 
   const hasSessdata = !!map["SESSDATA"];
   const hasUserId = !!map["DedeUserID"];
-  const username = map["DedeUserID__ckMd5"] ? "已配置" : "";
+  const expiresAt = cookies.reduce((min, c) => {
+    if (c.name !== "SESSDATA" || typeof c.expirationDate !== "number") return min;
+    return min === null || c.expirationDate < min ? c.expirationDate : min;
+  }, null);
 
   return {
     loggedIn: hasSessdata && hasUserId,
     hasSessdata,
     hasUserId,
-    username,
+    uid: map["DedeUserID"] || "",
+    expiresAt,
     cookieCount: cookies.length,
   };
 }
@@ -118,18 +215,21 @@ async function getCookies() {
 
 /**
  * 读取已保存的多账号列表
+ * 返回的每一项会附带计算出来的过期信息（expired / expiresAt / sessionOnly），
+ * 这些字段只用于界面展示，不会被写回存储。
  * @returns {Promise<Array>}
  */
 async function listAccounts() {
   const data = await chrome.storage.local.get(ACCOUNTS_STORAGE_KEY);
-  return data[ACCOUNTS_STORAGE_KEY] || [];
+  const accounts = data[ACCOUNTS_STORAGE_KEY] || [];
+  return accounts.map((a) => ({ ...a, ...accountExpiryInfo(a.cookies || []) }));
 }
 
 /**
  * 保存当前账号到多账号列表
  * @param {string} name 账号备注
  * @param {Array<{name:string,value:string}>} cookies
- * @returns {Promise<object>} 保存后的账号对象
+ * @returns {Promise<object>} 保存后的账号对象（含过期信息）
  */
 async function saveAccount(name, cookies) {
   if (!Array.isArray(cookies) || cookies.length === 0) {
@@ -139,17 +239,18 @@ async function saveAccount(name, cookies) {
   for (const c of cookies) map[c.name] = c.value;
   const uid = map["DedeUserID"] || "未知UID";
 
-  const accounts = await listAccounts();
+  const accounts = await chrome.storage.local.get(ACCOUNTS_STORAGE_KEY);
+  const raw = accounts[ACCOUNTS_STORAGE_KEY] || [];
   const account = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-    name: (name && name.trim()) || `账号 ${accounts.length + 1}`,
+    name: (name && name.trim()) || `账号 ${raw.length + 1}`,
     uid,
     cookies,
     savedAt: Date.now(),
   };
-  accounts.push(account);
-  await chrome.storage.local.set({ [ACCOUNTS_STORAGE_KEY]: accounts });
-  return account;
+  raw.push(account);
+  await chrome.storage.local.set({ [ACCOUNTS_STORAGE_KEY]: raw });
+  return { ...account, ...accountExpiryInfo(account.cookies) };
 }
 
 /**
@@ -157,7 +258,8 @@ async function saveAccount(name, cookies) {
  * @param {string} id 账号 id
  */
 async function deleteAccount(id) {
-  const accounts = await listAccounts();
+  const data = await chrome.storage.local.get(ACCOUNTS_STORAGE_KEY);
+  const accounts = data[ACCOUNTS_STORAGE_KEY] || [];
   const filtered = accounts.filter((a) => a.id !== id);
   await chrome.storage.local.set({ [ACCOUNTS_STORAGE_KEY]: filtered });
 }
@@ -165,15 +267,19 @@ async function deleteAccount(id) {
 /**
  * 切换到指定账号：先清除现有 Cookie，再写入该账号的 Cookie
  * @param {string} id 账号 id
+ * @returns {Promise<{summary:object, expiry:object}>} 写入统计与该账号的有效期情况
  */
 async function switchAccount(id) {
-  const accounts = await listAccounts();
+  const data = await chrome.storage.local.get(ACCOUNTS_STORAGE_KEY);
+  const accounts = data[ACCOUNTS_STORAGE_KEY] || [];
   const account = accounts.find((a) => a.id === id);
   if (!account) {
     throw new Error("未找到该账号");
   }
+  const expiry = accountExpiryInfo(account.cookies || []);
   await clearCookies();
-  await writeCookies(account.cookies);
+  const summary = await writeCookies(account.cookies);
+  return { summary, expiry };
 }
 
 // 监听来自 popup 的消息
@@ -181,8 +287,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
     case "writeCookies":
       writeCookies(message.cookies)
-        .then(() => sendResponse({ ok: true }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
+        .then((summary) => sendResponse({ ok: true, summary }))
+        .catch((err) => sendResponse({ ok: false, error: err.message, summary: err.summary }));
       break;
 
     case "clearCookies":
@@ -223,8 +329,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     case "switchAccount":
       switchAccount(message.id)
-        .then(() => sendResponse({ ok: true }))
-        .catch((err) => sendResponse({ ok: false, error: err.message }));
+        .then((result) => sendResponse({ ok: true, ...result }))
+        .catch((err) => sendResponse({ ok: false, error: err.message, summary: err.summary }));
       break;
 
     case "openBilibili":

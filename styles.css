@@ -324,6 +324,17 @@ textarea {
   color: #8a8f99;
 }
 
+.account-item .account-expiry {
+  font-size: 10px;
+  color: #a0a4ab;
+  margin-top: 2px;
+}
+
+.account-item .account-expiry.expired {
+  color: #f5222d;
+  font-weight: 500;
+}
+
 .account-item .account-badge {
   flex: none;
   font-size: 10px;
