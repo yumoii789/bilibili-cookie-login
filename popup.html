@@ -14,6 +14,7 @@
         <h1>哔哩哔哩 Cookies 登录助手</h1>
       </div>
       <p class="subtitle">通过导入 Cookies 快速登录网页端</p>
+      <button id="btn-settings" class="settings-btn" title="设置（自动续期 / WebDAV 同步 / 自动刷新页面）" aria-label="打开设置">⚙</button>
     </header>
 
     <!-- 登录状态显示 -->
@@ -78,6 +79,8 @@
       <h2>多账号管理</h2>
       <p class="hint">保存多个 B 站账号的 Cookie，随时一键切换登录。</p>
 
+      <div id="renew-report" class="renew-report hidden"></div>
+
       <div class="account-save-row">
         <input type="text" id="account-name" placeholder="账号备注（如：小号）">
         <button id="btn-save-account" class="btn btn-primary btn-sm">保存当前账号</button>
@@ -103,7 +106,12 @@
     <div id="message" class="message hidden"></div>
 
     <footer class="footer">
-      <p>提示：Cookie 仅保存在本地浏览器，不会上传到任何服务器。</p>
+      <p>提示：Cookie 仅保存在本地浏览器，不会上传到任何服务器（开启 WebDAV 同步除外）。</p>
+      <p class="footer-links">
+        <a href="https://github.com/yumoii789/bilibili-cookie-login" class="footer-link" target="_blank" rel="noopener noreferrer">GitHub 开源仓库 ↗</a>
+        <span class="footer-sep">·</span>
+        <span class="footer-version">v1.1.0</span>
+      </p>
     </footer>
   </div>
 

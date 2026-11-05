@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>设置 - 哔哩哔哩 Cookies 登录助手</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container options-container">
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">B</span>
+        <h1>设置</h1>
+      </div>
+      <p class="subtitle">哔哩哔哩 Cookies 登录助手 v1.1.0</p>
+    </header>
+
+    <!-- ① 临期自动续期 -->
+    <section class="section">
+      <h2>Cookie 临期自动续期</h2>
+      <p class="hint">
+        在账号凭证快过期（或已过期）时，自动从浏览器当前已登录的 B 站会话中获取最新 Cookie，
+        更新到对应的已保存账号。需要该账号恰好是浏览器当前登录的账号（按 UID 匹配）；
+        匹配不到时会在弹窗中提醒你重新登录。
+      </p>
+      <div class="setting-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="opt-auto-renew">
+          <span>启用临期自动续期</span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <label for="opt-renew-days">临期阈值（天）：</label>
+        <input type="number" id="opt-renew-days" min="1" max="90" step="1" class="num-input">
+        <span class="hint-inline">凭证剩余有效期少于该天数时视为「临期」</span>
+      </div>
+      <div class="btn-row">
+        <button id="btn-check-now" class="btn btn-secondary">立即检查一次</button>
+      </div>
+      <div id="renew-result" class="renew-result"></div>
+    </section>
+
+    <!-- ④ 自动刷新页面 -->
+    <section class="section">
+      <h2>自动刷新 B 站页面</h2>
+      <p class="hint">写入 Cookie、清除 Cookie 或切换账号成功后，自动刷新所有已打开的哔哩哔哩标签页，让新 Cookie 立即生效。</p>
+      <div class="setting-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="opt-auto-reload">
+          <span>启用自动刷新页面</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- ② WebDAV 云端同步 -->
+    <section class="section">
+      <h2>WebDAV 云端同步</h2>
+      <p class="hint">
+        把已保存的账号列表备份到你的 WebDAV 网盘（坚果云、群晖、Nextcloud 等均支持），
+        换电脑或重装浏览器后可一键恢复。备份文件为 <code>bilibili-cookies-backup.json</code>。
+        ⚠ 备份文件包含 Cookie 明文，请勿把 WebDAV 地址和密码泄露给他人。
+      </p>
+      <div class="setting-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="opt-webdav-enabled">
+          <span>启用 WebDAV 同步</span>
+        </label>
+      </div>
+      <div class="field">
+        <label for="opt-webdav-url">服务器地址</label>
+        <input type="text" id="opt-webdav-url" placeholder="https://dav.jianguoyun.com/dav/（目录或完整文件地址均可）">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="opt-webdav-user">账号</label>
+          <input type="text" id="opt-webdav-user" placeholder="WebDAV 账号" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="opt-webdav-pass">密码 / 应用密码</label>
+          <input type="password" id="opt-webdav-pass" placeholder="WebDAV 密码" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="setting-row">
+        <label class="checkbox-label">
+          <input type="checkbox" id="opt-webdav-auto">
+          <span>账号变动时自动同步（保存 / 删除账号后自动上传备份）</span>
+        </label>
+      </div>
+      <div class="btn-row">
+        <button id="btn-webdav-upload" class="btn btn-secondary">立即上传备份</button>
+        <button id="btn-webdav-download" class="btn btn-danger">从云端恢复</button>
+      </div>
+      <p class="hint warn-hint">⚠ 恢复会完全覆盖本机已保存的账号列表，操作前请确认云端备份是最新的。</p>
+      <div id="webdav-result" class="renew-result"></div>
+      <p class="hint">
+        首次启用时会请求访问你的 WebDAV 站点的权限（仅此站点）。
+        密码以明文保存在浏览器本地存储中，仅供本插件向 WebDAV 服务器发起请求使用。
+      </p>
+    </section>
+
+    <div class="btn-row save-row">
+      <button id="btn-save" class="btn btn-primary">保存设置</button>
+      <span id="save-status" class="save-status"></span>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

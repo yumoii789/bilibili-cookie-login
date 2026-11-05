@@ -377,3 +377,287 @@ textarea {
 .account-item .mini-btn.del:hover {
   background: #ffccc7;
 }
+
+/* ===== v1.1.0 新增：设置按钮 / 头像 / 备注 / 续期报告 / 设置页 ===== */
+
+/* 弹窗右上角设置按钮 */
+.settings-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #4e5969;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.settings-btn:hover {
+  background: #f2f3f5;
+  color: #fb7299;
+}
+
+/* 账号头像（③） */
+.account-item {
+  flex-wrap: wrap; /* 备注编辑器需要整行换行 */
+}
+
+.account-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex: none;
+  overflow: hidden;
+  background: #f2f3f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: #fff;
+}
+
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.account-avatar.fallback {
+  background: linear-gradient(135deg, #fb7299, #fc8bab);
+}
+
+/* 备注行与行内编辑器（③） */
+.account-note {
+  font-size: 11px;
+  color: #4e5969;
+  margin-top: 2px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-note.empty {
+  color: #c9cdd4;
+}
+
+.note-editor {
+  flex-basis: 100%;
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.note-editor input {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #e5e6eb;
+  border-radius: 6px;
+}
+
+.note-editor input:focus {
+  outline: none;
+  border-color: #fb7299;
+}
+
+/* mini-btn 备注按钮配色（沿用切换按钮的粉色系） */
+.mini-btn.note {
+  background: #fff0f6;
+  color: #eb2f96;
+  border: 1px solid #ffadd2;
+}
+
+.mini-btn.note:hover {
+  background: #ffd6e7;
+}
+
+/* 临期续期报告条（①，弹窗内） */
+.renew-report {
+  margin: 6px 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.renew-report.hidden {
+  display: none;
+}
+
+.renew-line {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.renew-line.ok {
+  background: #f6ffed;
+  color: #389e0d;
+  border: 1px solid #b7eb8f;
+}
+
+.renew-line.warn {
+  background: #fffbe6;
+  color: #d48806;
+  border: 1px solid #ffe58f;
+}
+
+/* 页脚仓库链接（⑤） */
+.footer-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.footer a.footer-link {
+  color: #fb7299;
+  text-decoration: none;
+}
+
+.footer a.footer-link:hover {
+  text-decoration: underline;
+}
+
+.footer-sep {
+  color: #c9cdd4;
+}
+
+.footer-version {
+  color: #8a8f99;
+}
+
+/* ===== 设置页（options.html）===== */
+
+.options-container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+  position: relative;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1d2129;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #fb7299;
+  cursor: pointer;
+}
+
+.num-input {
+  width: 72px;
+  padding: 5px 8px;
+  border: 1px solid #e5e6eb;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.num-input:focus {
+  outline: none;
+  border-color: #fb7299;
+}
+
+.hint-inline {
+  font-size: 11px;
+  color: #8a8f99;
+}
+
+.field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.field-row .field {
+  flex: 1;
+  min-width: 0;
+}
+
+.warn-hint {
+  color: #d48806;
+}
+
+code {
+  background: #f2f3f5;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.renew-result {
+  font-size: 12px;
+  line-height: 1.6;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.renew-result:empty {
+  display: none;
+}
+
+.renew-result.ok {
+  background: #f6ffed;
+  color: #389e0d;
+  border: 1px solid #b7eb8f;
+}
+
+.renew-result.err {
+  background: #fff1f0;
+  color: #cf1322;
+  border: 1px solid #ffa39e;
+}
+
+.save-row {
+  margin-top: 20px;
+  align-items: center;
+}
+
+.save-status {
+  font-size: 12px;
+}
+
+.save-status.ok {
+  color: #389e0d;
+}
+
+.save-status.err {
+  color: #cf1322;
+}
+
+@media (max-width: 520px) {
+  .field-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

@@ -364,11 +364,29 @@ async function renderAccountList() {
       const item = document.createElement("div");
       item.className = "account-item";
 
+      // 头像（③）：有 face 用 B 站头像，加载失败退回首字符占位；无 face 直接用首字符
+      const avatarWrap = document.createElement("div");
+      avatarWrap.className = "account-avatar" + (acc.face ? "" : " fallback");
+      if (acc.face) {
+        const img = document.createElement("img");
+        img.src = acc.face;
+        img.alt = "";
+        img.referrerPolicy = "no-referrer"; // B 站图床有防盗链，去掉 Referer 才能加载
+        img.addEventListener("error", () => {
+          avatarWrap.classList.add("fallback");
+          avatarWrap.textContent = (acc.uname || acc.name || "?").slice(0, 1);
+          img.remove();
+        });
+        avatarWrap.appendChild(img);
+      } else {
+        avatarWrap.textContent = (acc.uname || acc.name || "?").slice(0, 1);
+      }
+
       const info = document.createElement("div");
       info.className = "account-info";
       const nameEl = document.createElement("div");
       nameEl.className = "account-name";
-      nameEl.textContent = acc.name;
+      nameEl.textContent = acc.uname || acc.name; // 优先显示 B 站昵称，其次保存时的备注名
       const uidEl = document.createElement("div");
       uidEl.className = "account-uid";
       uidEl.textContent = `UID: ${acc.uid}`;
@@ -389,6 +407,12 @@ async function renderAccountList() {
       }
       if (expiryEl.textContent) info.appendChild(expiryEl);
 
+      // 备注（③）：可添加/编辑说明
+      const noteEl = document.createElement("div");
+      noteEl.className = "account-note" + (acc.note ? "" : " empty");
+      noteEl.textContent = acc.note ? `备注：${acc.note}` : "备注：点击「备注」添加说明";
+      info.appendChild(noteEl);
+
       const actions = document.createElement("div");
       actions.className = "account-actions";
 
@@ -397,14 +421,21 @@ async function renderAccountList() {
       switchBtn.textContent = "切换";
       switchBtn.addEventListener("click", () => switchToAccount(acc.id));
 
+      const noteBtn = document.createElement("button");
+      noteBtn.className = "mini-btn note";
+      noteBtn.textContent = "备注";
+      noteBtn.addEventListener("click", () => startEditNote(item, acc));
+
       const delBtn = document.createElement("button");
       delBtn.className = "mini-btn del";
       delBtn.textContent = "删除";
       delBtn.addEventListener("click", () => deleteAccount(acc.id));
 
       actions.appendChild(switchBtn);
+      actions.appendChild(noteBtn);
       actions.appendChild(delBtn);
 
+      item.appendChild(avatarWrap);
       item.appendChild(info);
       item.appendChild(actions);
       accountListEl.appendChild(item);
@@ -412,6 +443,47 @@ async function renderAccountList() {
   } catch (e) {
     accountListEl.innerHTML = `<p class="account-empty">加载失败：${e.message}</p>`;
   }
+}
+
+/**
+ * 行内编辑账号备注（扩展页面禁用 window.prompt，这里用行内输入框替代）
+ * @param {HTMLElement} item 账号项根元素
+ * @param {{id:string, note?:string}} acc
+ */
+function startEditNote(item, acc) {
+  if (item.querySelector(".note-editor")) return; // 已在编辑中，避免重复叠加
+  const editor = document.createElement("div");
+  editor.className = "note-editor";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.maxLength = 100;
+  input.placeholder = "输入备注说明（如：大号 / 小号 / 工作号）";
+  input.value = acc.note || "";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "mini-btn switch";
+  saveBtn.textContent = "保存";
+  saveBtn.addEventListener("click", async () => {
+    try {
+      await sendToBackground({ action: "updateAccountNote", id: acc.id, note: input.value });
+      showMessage("备注已保存。", "success");
+      await renderAccountList();
+    } catch (e) {
+      showMessage(`备注保存失败：${e.message}`, "error");
+    }
+  });
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "mini-btn del";
+  cancelBtn.textContent = "取消";
+  cancelBtn.addEventListener("click", () => editor.remove());
+
+  editor.appendChild(input);
+  editor.appendChild(saveBtn);
+  editor.appendChild(cancelBtn);
+  item.appendChild(editor);
+  input.focus();
 }
 
 /**
@@ -468,8 +540,9 @@ async function switchToAccount(id) {
         "error"
       );
     } else {
+      const reloadTip = res.reloaded > 0 ? `已自动刷新 ${res.reloaded} 个已打开的 B 站页面。` : "";
       showMessage(
-        "账号切换成功！请刷新或打开哔哩哔哩页面。" + (extra ? ` 注意：${extra}` : ""),
+        `账号切换成功！${reloadTip}` + (extra ? ` 注意：${extra}` : ""),
         extra ? "info" : "success"
       );
     }
@@ -595,6 +668,67 @@ txtImportInput.addEventListener("change", async () => {
   }
 });
 
+// --- 设置页入口（右上角齿轮）---
+const btnSettings = document.getElementById("btn-settings");
+if (btnSettings) {
+  btnSettings.addEventListener("click", () => {
+    chrome.runtime.openOptionsPage();
+  });
+}
+
+// --- 页脚仓库链接（⑤）：popup 内直接导航会关闭弹窗，改为新标签页打开 ---
+for (const linkEl of document.querySelectorAll("a.footer-link")) {
+  linkEl.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    chrome.tabs.create({ url: linkEl.href });
+    window.close();
+  });
+}
+
+// --- 临期自动续期报告（①）---
+
+/**
+ * 检查一次并渲染临期报告：
+ * - 有账号自动续期成功 → 绿色提示；
+ * - 有账号临期但没拿到新凭证 → 提示需要先在 B 站重新登录。
+ * 检查本身是纯本地 Cookie 比较，popup 每次打开执行一次成本极低；
+ * 真正的网络请求（nav 接口）只在确实要补头像/昵称时才发生。
+ */
+async function showRenewReport() {
+  try {
+    const res = await sendToBackground({ action: "runAutoRenewCheck" });
+    renderRenewReport(res.report || {});
+  } catch (e) {
+    // 报告读取失败不影响主流程
+  }
+}
+
+/**
+ * 把检查报告渲染到多账号区块顶部的提示条
+ * @param {{renewed?:Array, stale?:Array}} report
+ */
+function renderRenewReport(report) {
+  const el = document.getElementById("renew-report");
+  if (!el) return;
+  const renewed = report.renewed || [];
+  const stale = report.stale || [];
+  const parts = [];
+  if (renewed.length > 0) {
+    const names = renewed.map((r) => r.name || r.uid).join("、");
+    parts.push(
+      `<div class="renew-line ok">✓ 已自动为 ${renewed.length} 个临期账号获取最新 Cookie：${names}</div>`
+    );
+  }
+  if (stale.length > 0) {
+    parts.push(
+      `<div class="renew-line warn">⚠ ${stale.length} 个账号凭证临期或已过期，且浏览器中没有该账号更新的登录会话，无法自动续期。请先在 B 站重新登录，重新打开本窗口时会自动获取新 Cookie。</div>`
+    );
+  }
+  el.innerHTML = parts.join("");
+  el.classList.toggle("hidden", parts.length === 0);
+}
+
 // 初始化时读取状态
 refreshStatus();
 renderAccountList();
+showRenewReport();
