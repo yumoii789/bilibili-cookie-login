@@ -4,6 +4,18 @@
 
 ![License](https://img.shields.io/badge/license-MIT-green) ![Platform](https://img.shields.io/badge/platform-Chrome%20%7C%20Edge-blue) ![Manifest](https://img.shields.io/badge/manifest-v3-orange)
 
+> ## ⚠️ Cookie 就是你的账号，别给任何人
+>
+> 导出的 Cookie / txt **等同于账号登录凭证**，任何人拿到都能直接登录你的账号，**不需要你的密码**。
+>
+> - ❌ 不要发给「代登录」「代挂」「帮忙看看」的任何人，**包括作者本人**——作者不需要、也不会向你索取
+> - ❌ 不要粘贴到聊天群、论坛、issue、截图、网盘或任何在线工具里
+> - ❌ 不要把含 Cookie 的 txt 传到公开仓库（B 站 Cookie 泄漏是账号被盗最常见的原因）
+> - ✅ 只在本机、只在自己信任的浏览器里导入使用
+> - 🚨 万一已经泄漏：立刻到 [B 站安全中心](https://passport.bilibili.com/account/security) 退出全部设备并修改密码，然后重新获取 Cookie
+>
+> 本插件的所有 Cookie 只存在你自己的浏览器本地存储中（`chrome.storage.local`），不上传任何服务器；开启 WebDAV 时也只会上传到你**自己填写**的服务器。
+
 ## 功能
 
 - **自动获取已登录 Cookie**：从当前浏览器已登录的 B 站账号中一键读取全部 Cookie，可「获取并写入」「获取并填入表单」或「复制」。
@@ -142,7 +154,7 @@ bilibili-cookie-login/
 
 - 插件只支持 **Chromium 内核**浏览器（Chrome、Edge、Brave、Opera 等）。
 - Cookie 会过期，过期后需重新导入；导入的 txt 中若缺少 `SESSDATA`，插件会提示可能无法登录。
-- 导出的 txt 文件等同于账号凭证，请妥善保管，不要分享给他人。
+- 导出的 txt 文件等同于账号凭证，请妥善保管，**不要分享给他人**（详见文首警告）。
 - 「自动获取头像和昵称」使用 B 站公开的用户信息接口（api.bilibili.com），仅在保存账号或续期检查需要补全信息时请求。
 - 开启 WebDAV 同步后，账号备份会按你的配置上传到**你自己填写**的 WebDAV 服务器；除此之外插件不会上传任何数据。
 
